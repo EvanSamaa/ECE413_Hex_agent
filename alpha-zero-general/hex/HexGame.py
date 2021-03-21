@@ -1,50 +1,96 @@
+from __future__ import print_function
+import sys
+sys.path.append('..')
+from Game import Game
 import numpy as np
-import random
 
-EMPTY = -1
-
+EMPTY = 0
 edge_nodes = [(-1, -2), (-3, -4)]
 
-class Board:
-    def __init__(self, size):
-        self.size = size
-        self.turn = 0
-        self.board = np.int8([EMPTY] * (size ** 2))
+class HexGame(Game):
+    square_content = {
+        -1: "X",
+        +0: "-",
+        +1: "O"
+    }
 
-        self.edges = { i: get_edges(i, size) for i in range(size**2) }
-        self.edges[edge_nodes[0][0]] = [i for i in range(size)]
-        self.edges[edge_nodes[0][1]] = [i + (size - 1) * size for i in range(size)]
-        self.edges[edge_nodes[1][0]] = [i * size for i in range(size)]
-        self.edges[edge_nodes[1][1]] = [i * size + (size - 1) for i in range(size)]
+    @staticmethod
+    def getSquarePiece(piece):
+        return HexGame.square_content[piece]
 
-    def __str__(self):
-        s = ''
-        for i in range(self.size):
-            s += ' ' * i
-            for j in range(self.size):
-                s += (['-', 'x', 'o'])[self.board[i * self.size + j] + 1] + ' '
-            s += '\n'
-        return s
+    def __init__(self, n):
+        self.n = n
+        # Initialize the connection graph
+        self.edges = { i: get_edges(i, n) for i in range(n**2) }
+        self.edges[edge_nodes[0][0]] = [i for i in range(n)]
+        self.edges[edge_nodes[0][1]] = [i + (n - 1) * n for i in range(n)]
+        self.edges[edge_nodes[1][0]] = [i * n for i in range(n)]
+        self.edges[edge_nodes[1][1]] = [i * n + (n - 1) for i in range(n)]
 
-    def actions(self):
-        return [i for i in range(self.size ** 2) if self.board[i] == EMPTY]
+    def getInitBoard(self):
+        # return initial board (numpy board)
+        return np.zeros((self.n, self.n))
 
-    def do(self, action):
-        self.board[action] = self.turn
-        self.turn = 1 - self.turn
+    def getBoardSize(self):
+        # (a,b) tuple
+        return (self.n, self.n)
 
-    def eval(self):
+    def getActionSize(self):
+        # return number of actions
+        return self.n*self.n
+
+    def getNextState(self, board, player, action):
+        # if player takes action on board, return next (board,player)
+        # action must be a valid move
+        b = np.copy(board)
+        move = (int(action/self.n), action%self.n)
+        b[move] = player
+        return (b, -player)
+
+    def getValidMoves(self, board, player):
+        # return a fixed size binary vector
+        moves = np.zeros(board.shape)
+        moves[board == 0] = 1
+        return np.reshape(moves, (-1,))
+
+    def getGameEnded(self, board, player):
+        # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
+        # player = 1
+        flat_board = board.reshape((-1,))
         for turn, (start, end) in enumerate(edge_nodes):
-            if find_path(self.board, self.edges, start, end, turn):
+            if find_path(flat_board, self.edges, start, end, turn):
                 return turn
-        return None
+        return 0
 
-    def serialize(self):
-        if self.turn == 0:
-            return self.board.copy()
-        else:
-            transposed = np.reshape(np.transpose(np.reshape(self.board, (self.size, self.size))), (self.size ** 2,))
-            return np.choose(transposed + 1, np.int8([EMPTY, 1, 0]))
+    def getCanonicalForm(self, board, player):
+        # return state if player==1, else return -state if player==-1
+        # Transpose the board for player 1, they want to connect left and right
+        return board if player == 1 else -board.T
+
+    def getSymmetries(self, board, pi):
+        # TODO: enable symmetries?
+        # mirror, rotational
+        # assert(len(pi) == self.n**2+1)  # 1 for pass
+        # pi_board = np.reshape(pi[:-1], (self.n, self.n))
+        # l = []
+
+        # for i in range(1, 5):
+        #     for j in [True, False]:
+        #         newB = np.rot90(board, i)
+        #         newPi = np.rot90(pi_board, i)
+        #         if j:
+        #             newB = np.fliplr(newB)
+        #             newPi = np.fliplr(newPi)
+        #         l += [(newB, list(newPi.ravel()) + [pi[-1]])]
+        # return l
+        return []
+
+    def stringRepresentation(self, board):
+        return board.tostring()
+
+    def stringRepresentationReadable(self, board):
+        board_s = "".join(self.square_content[square] for row in board for square in row)
+        return board_s
 
 def get_edges(i, n):
     y = i // n
@@ -74,38 +120,3 @@ def find_path(nodes, edges, begin, end, val):
             if nodes[nbr] == val and nbr not in visited:
                 todo.append(nbr)
     return False
-
-def gen_samples(size, n_games):
-    samples = []
-
-    for _ in range(n_games):
-        board = Board(size)
-        val = None
-        game_samples = []
-        while val is None:
-            act = random.choice(board.actions())
-            board.do(act)
-            val = board.eval()
-            # serialization is noramlized, so always 0 or -1
-            game_samples.append((board.serialize(), 0 if val is None else -1))
-        samples.extend(game_samples[-2:])
-
-    return samples
-
-if __name__ == '__main__':
-    N = 7
-    n_games = 1000000
-    bs = 1000
-    samples = []
-    for i in range(n_games // bs):
-        samples.extend(gen_samples(N, bs))
-        print('{} / {}'.format((i+1) * bs, n_games))
-    X = np.int8([d for d, _ in samples])
-    Y = np.int8([l for _, l in samples])
-
-    filename = './data/hex/eval{}'.format(N)
-
-    print('Saving to {}'.format(filename))
-    np.savez(filename, X=X, Y=Y)
-
-
