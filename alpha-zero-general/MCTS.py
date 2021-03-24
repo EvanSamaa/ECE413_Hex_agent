@@ -34,9 +34,14 @@ class MCTS():
             probs: a policy vector where the probability of the ith action is
                    proportional to Nsa[(s,a)]**(1./temp)
         """
+        # print("getActionProb")
+
         for i in range(self.args.numMCTSSims):
             self.search(canonicalBoard)
 
+        # print("Nsa len", len(self.Nsa))
+
+        # print(self.game.stringRepresentationReadable(canonicalBoard))
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
 
@@ -49,6 +54,12 @@ class MCTS():
 
         counts = [x ** (1. / temp) for x in counts]
         counts_sum = float(sum(counts))
+
+        if counts_sum == 0:
+            print(self.game.stringRepresentationReadable(canonicalBoard))
+            print(self.game.getValidMoves(canonicalBoard, 1))
+            print(counts)
+
         probs = [x / counts_sum for x in counts]
         return probs
 
@@ -83,6 +94,7 @@ class MCTS():
         if s not in self.Ps:
             # leaf node
             self.Ps[s], v = self.nnet.predict(canonicalBoard)
+            print(self.Ps[s], v)
             valids = self.game.getValidMoves(canonicalBoard, 1)
             self.Ps[s] = self.Ps[s] * valids  # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])

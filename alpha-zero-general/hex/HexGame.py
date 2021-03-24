@@ -5,13 +5,13 @@ from Game import Game
 import numpy as np
 
 EMPTY = 0
-edge_nodes = [(-1, -1, -2), (1, -3, -4)] # (player, node1, node2)
+edge_nodes = [(1, -1, -2), (-1, -3, -4)] # (player, node1, node2)
 
 class HexGame(Game):
     square_content = {
-        -1: "X",
+        -1: "O",
         +0: "-",
-        +1: "O"
+        +1: "X"
     }
 
     @staticmethod
@@ -53,13 +53,13 @@ class HexGame(Game):
         moves[board == 0] = 1
         return np.reshape(moves, (-1,))
 
-    def getGameEnded(self, board, player):
+    def getGameEnded(self, board, current_player):
         # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
         # player = 1
         flat_board = board.reshape((-1,))
         for (player, start, end) in edge_nodes:
             if find_path(flat_board, self.edges, start, end, player):
-                return player
+                return player * current_player
         return 0
 
     def getCanonicalForm(self, board, player):
@@ -83,7 +83,7 @@ class HexGame(Game):
         #             newPi = np.fliplr(newPi)
         #         l += [(newB, list(newPi.ravel()) + [pi[-1]])]
         # return l
-        return []
+        return [(board, pi)]
 
     def stringRepresentation(self, board):
         return board.tostring()
