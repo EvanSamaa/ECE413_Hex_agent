@@ -5,7 +5,7 @@ from Game import Game
 import numpy as np
 
 EMPTY = 0
-edge_nodes = [(-1, -2), (-3, -4)]
+edge_nodes = [(-1, -1, -2), (1, -3, -4)] # (player, node1, node2)
 
 class HexGame(Game):
     square_content = {
@@ -22,10 +22,10 @@ class HexGame(Game):
         self.n = n
         # Initialize the connection graph
         self.edges = { i: get_edges(i, n) for i in range(n**2) }
-        self.edges[edge_nodes[0][0]] = [i for i in range(n)]
-        self.edges[edge_nodes[0][1]] = [i + (n - 1) * n for i in range(n)]
-        self.edges[edge_nodes[1][0]] = [i * n for i in range(n)]
-        self.edges[edge_nodes[1][1]] = [i * n + (n - 1) for i in range(n)]
+        self.edges[edge_nodes[0][1]] = [i for i in range(n)]
+        self.edges[edge_nodes[0][2]] = [i + (n - 1) * n for i in range(n)]
+        self.edges[edge_nodes[1][1]] = [i * n for i in range(n)]
+        self.edges[edge_nodes[1][2]] = [i * n + (n - 1) for i in range(n)]
 
     def getInitBoard(self):
         # return initial board (numpy board)
@@ -57,9 +57,9 @@ class HexGame(Game):
         # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
         # player = 1
         flat_board = board.reshape((-1,))
-        for turn, (start, end) in enumerate(edge_nodes):
-            if find_path(flat_board, self.edges, start, end, turn):
-                return turn
+        for (player, start, end) in edge_nodes:
+            if find_path(flat_board, self.edges, start, end, player):
+                return player
         return 0
 
     def getCanonicalForm(self, board, player):
@@ -89,8 +89,13 @@ class HexGame(Game):
         return board.tostring()
 
     def stringRepresentationReadable(self, board):
-        board_s = "".join(self.square_content[square] for row in board for square in row)
-        return board_s
+        s = ''
+        for i in range(self.n):
+            s += ' ' * i
+            for j in range(self.n):
+                s += HexGame.square_content[int(board[i,j])] + ' '
+            s += '\n'
+        return s
 
 def get_edges(i, n):
     y = i // n
@@ -98,13 +103,13 @@ def get_edges(i, n):
     nbrs = [ r * n + c for r, c in [(y-1, x), (y-1, x+1), (y, x-1), (y, x+1), (y+1, x-1), (y+1, x)] if 0 <= r < n and 0 <= c < n ]
 
     if y == 0:
-        nbrs.append(edge_nodes[0][0])
-    if y == n - 1:
         nbrs.append(edge_nodes[0][1])
+    if y == n - 1:
+        nbrs.append(edge_nodes[0][2])
     if x == 0:
-        nbrs.append(edge_nodes[1][0])
-    if x == n - 1:
         nbrs.append(edge_nodes[1][1])
+    if x == n - 1:
+        nbrs.append(edge_nodes[1][2])
 
     return nbrs
 
