@@ -7,6 +7,9 @@ from hex.HexGame import HexGame as Game
 from hex.NNet import NNetWrapper as nn
 from utils import *
 
+import torch
+import numpy as np
+
 log = logging.getLogger(__name__)
 
 coloredlogs.install(level='INFO')  # Change this to DEBUG to see more info.
@@ -28,8 +31,11 @@ args = dotdict({
 })
 
 def main():
+    torch.manual_seed(1)
+    np.random.seed(1)
+
     log.info('Loading %s...', Game.__name__)
-    g = Game(2)
+    g = Game(5)
 
     log.info('Loading %s...', nn.__name__)
     nnet = nn(g)

@@ -103,13 +103,13 @@ def get_edges(i, n):
     nbrs = [ r * n + c for r, c in [(y-1, x), (y-1, x+1), (y, x-1), (y, x+1), (y+1, x-1), (y+1, x)] if 0 <= r < n and 0 <= c < n ]
 
     if y == 0:
-        nbrs.append(edge_nodes[0][1])
-    if y == n - 1:
-        nbrs.append(edge_nodes[0][2])
-    if x == 0:
         nbrs.append(edge_nodes[1][1])
-    if x == n - 1:
+    if y == n - 1:
         nbrs.append(edge_nodes[1][2])
+    if x == 0:
+        nbrs.append(edge_nodes[0][1])
+    if x == n - 1:
+        nbrs.append(edge_nodes[0][2])
 
     return nbrs
 

@@ -58,6 +58,7 @@ class MCTS():
         if counts_sum == 0:
             print(self.game.stringRepresentationReadable(canonicalBoard))
             print(self.game.getValidMoves(canonicalBoard, 1))
+            print(self.game.getGameEnded(canonicalBoard, 1), self.game.getGameEnded(canonicalBoard, -1))
             print(counts)
 
         probs = [x / counts_sum for x in counts]
@@ -94,7 +95,6 @@ class MCTS():
         if s not in self.Ps:
             # leaf node
             self.Ps[s], v = self.nnet.predict(canonicalBoard)
-            print(self.Ps[s], v)
             valids = self.game.getValidMoves(canonicalBoard, 1)
             self.Ps[s] = self.Ps[s] * valids  # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
