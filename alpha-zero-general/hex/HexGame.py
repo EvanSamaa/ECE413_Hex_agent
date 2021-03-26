@@ -21,6 +21,7 @@ class HexGame(Game):
     def __init__(self, n):
         self.n = n
         # Initialize the connection graph
+        # Player 0 tries to connect top-bottom, Player 1 tries to connect left-right
         self.edges = { i: get_edges(i, n) for i in range(n**2) }
         self.edges[edge_nodes[0][1]] = [i for i in range(n)]
         self.edges[edge_nodes[0][2]] = [i + (n - 1) * n for i in range(n)]
@@ -101,18 +102,17 @@ def get_edges(i, n):
     y = i // n
     x = i % n
     nbrs = [ r * n + c for r, c in [(y-1, x), (y-1, x+1), (y, x-1), (y, x+1), (y+1, x-1), (y+1, x)] if 0 <= r < n and 0 <= c < n ]
-
     if y == 0:
-        nbrs.append(edge_nodes[1][1])
-    if y == n - 1:
-        nbrs.append(edge_nodes[1][2])
-    if x == 0:
         nbrs.append(edge_nodes[0][1])
-    if x == n - 1:
+    if y == n - 1:
         nbrs.append(edge_nodes[0][2])
-
+    if x == 0:
+        nbrs.append(edge_nodes[1][1])
+    if x == n - 1:
+        nbrs.append(edge_nodes[1][2])
     return nbrs
 
+# Searches for a path along `nodes` with value `val`, along `edges` from `begin` to `end`
 def find_path(nodes, edges, begin, end, val):
     todo = [begin]
     visited = set()
@@ -122,6 +122,7 @@ def find_path(nodes, edges, begin, end, val):
         for nbr in edges[nxt]:
             if nbr == end:
                 return True
-            if nodes[nbr] == val and nbr not in visited:
+            # Don't explore negative nodes, those are the board edges
+            if nbr >= 0 and nodes[nbr] == val and nbr not in visited:
                 todo.append(nbr)
     return False

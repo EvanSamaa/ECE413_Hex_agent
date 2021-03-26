@@ -57,8 +57,11 @@ class MCTS():
 
         if counts_sum == 0:
             print(self.game.stringRepresentationReadable(canonicalBoard))
-            print(self.game.getValidMoves(canonicalBoard, 1))
             print(self.game.getGameEnded(canonicalBoard, 1), self.game.getGameEnded(canonicalBoard, -1))
+            print(self.game.edges)
+            print(canonicalBoard)
+            print(canonicalBoard.reshape((-1,)))
+            print(self.game.getValidMoves(canonicalBoard, 1))
             print(counts)
 
         probs = [x / counts_sum for x in counts]
