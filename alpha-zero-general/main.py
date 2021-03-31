@@ -26,7 +26,7 @@ args = dotdict({
 
     'checkpoint': './temp/',
     'load_model': False,
-    'load_folder_file': ('./models/6x20','best.pth.tar'),
+    'load_folder_file': ('./models/jonah-2021-03-31','best.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 })
 
@@ -35,7 +35,7 @@ def main():
     np.random.seed(1)
 
     log.info('Loading %s...', Game.__name__)
-    g = Game(5)
+    g = Game(8)
 
     log.info('Loading %s...', nn.__name__)
     nnet = nn(g)
