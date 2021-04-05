@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+	"mcts-lib",
+	"mcts-py",
+]
+
