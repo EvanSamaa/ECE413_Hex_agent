@@ -1,5 +1,6 @@
 import random
 from mcts_py import PyHex, PySearch
+from net import wrap_for_rust
 
 # Pits player1 against player2. Each player is a function from board state to a valid action
 # Returns 1 if player1 wins, else 0
@@ -37,6 +38,7 @@ def human_player(game):
 
 def create_mcts_player(net, mcts_iterations=1000):
     search = PySearch()
+    net = wrap_for_rust(net)
     def player(game):
         return search.get_action(game, mcts_iterations, net)
     return player

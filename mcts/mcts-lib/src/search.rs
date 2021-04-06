@@ -16,6 +16,7 @@ enum Node {
     Inner {
         n: f32,
         stats: HashMap<u32, Stats>,
+        policy: Vec<f32>,
     },
 }
 
@@ -57,43 +58,53 @@ impl <G: Eq + Hash + Game + Clone> SearchTree<G> {
     }
     
     /// Runs an iteration of Monte-Carlo Tree Search
-    pub fn search<M: Fn(G) -> f32>(&mut self, s: &G, model: M) -> f32 {
+    pub fn search<M: Fn(G) -> (f32, Vec<f32>)>(&mut self, s: &G, model: M) -> f32 {
         match self.nodes.get(&s) {
             Some(Node::Terminal{ value }) => *value,
             Some(Node::Inner{ .. }) => self.search_descend(s, model),
             None => {
-                let node = match s.terminal_value() {
-                    Some(value) => Node::Terminal{ value },
-                    None => Node::Inner{
+                if let Some(value) = s.terminal_value() {
+                    self.nodes.insert(s.clone(), Node::Terminal{ value });
+                    value
+                } else {
+                    let (value, policy) = model(s.clone());
+                    // Normalize the policy
+                    let mut policy_normalized = vec![0.; policy.len()];
+                    let mut sum = 0.;
+                    for a in s.valid_actions() {
+                        policy_normalized[a as usize] = policy[a as usize];
+                        sum += policy[a as usize];
+                    }
+                    for p in &mut policy_normalized {
+                        *p /= sum;
+                    }
+                    self.nodes.insert(s.clone(), Node::Inner{
                         n: 0.,
                         stats: HashMap::new(),
-                    },
-                };
-                let value = match &node {
-                    Node::Terminal{ value } => *value,
-                    Node::Inner{ .. } => model(s.clone()),
-                };
-                self.nodes.insert(s.clone(), node);
-                value
+                        policy: policy_normalized,
+                    });
+                    value
+                }
             },
         }
     }
 
-    fn search_descend<M: Fn(G) -> f32>(&mut self, s: &G, model: M) -> f32 {
+    fn search_descend<M: Fn(G) -> (f32, Vec<f32>)>(&mut self, s: &G, model: M) -> f32 {
         let cpuct = 2.0_f32.sqrt();
         let action = match self.nodes.get(s) {
-            Some(Node::Inner{ n: n_s, stats }) => {
+            Some(Node::Inner{ n: n_s, stats, policy }) => {
                 // Pick the action with the highest upper confidence bound
                 let actions = s.valid_actions();
-                let action_count = s.action_count() as f32;
-                actions.max_by_key(|a|
-                    match stats.get(a) {
-                        Some(Stats { v, n: n_sa }) =>
-                            OrderedFloat((*v / *n_sa) + cpuct / action_count * ( *n_s / *n_sa ).sqrt()),
-                        None =>
-                            OrderedFloat(std::f32::INFINITY),
-                    }
-                ).unwrap()
+                actions.max_by_key(|a| {
+                    let (v, n_sa) = match stats.get(a) {
+                        Some(Stats { v, n: n_sa }) => (*v, *n_sa),
+                        None => (0., 0.),
+                    };
+                    let q_sa = if n_sa > 0. { v / n_sa } else { 0. };
+                    OrderedFloat(
+                        q_sa + cpuct * policy[*a as usize] * n_s.sqrt() / (1. + n_sa)
+                    )
+                }).unwrap()
             },
             _ => panic!("Descend must only be called on an inner node"),
         };
@@ -101,7 +112,7 @@ impl <G: Eq + Hash + Game + Clone> SearchTree<G> {
         let next_state = s.next_state(action);
         let v = self.search(&next_state, model);
 
-        if let Some(Node::Inner{ n, stats }) = self.nodes.get_mut(s) {
+        if let Some(Node::Inner{ n, stats, .. }) = self.nodes.get_mut(s) {
             let stats = stats.entry(action).or_insert(Stats{ v: 0., n: 0. });
             stats.v += -v;
             stats.n += 1.;
@@ -118,15 +129,13 @@ fn select_action<G: Game>(state: &G) -> u32 {
     state.valid_actions().nth(rng.gen_range(0..actions_count)).unwrap()
 }
 
-pub fn rollout2<G: Game>(_: G) -> f32 {
-    let mut rng = rand::thread_rng();
-    rng.gen_range(-1.0..1.0)
-}
-
-pub fn rollout<G: Game>(state: G) -> f32 {
+pub fn rollout<G: Game>(state: G) -> (f32, Vec<f32>) {
     match state.terminal_value() {
-        Some(v) => v,
-        None => -rollout(state.next_state(select_action(&state))),
+        Some(v) => (v, vec![1.; state.action_count()]),
+        None => {
+            let (v, p) = rollout(state.next_state(select_action(&state)));
+            (-v, p)
+        },
     }
 }
 

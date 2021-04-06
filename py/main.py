@@ -6,11 +6,11 @@ import torch.nn as nn
 import torch.optim as optim
 
 from mcts_py import PyHex, PySearch
-from net import Net
+from net import Net, wrap_for_rust
 from players import pit, create_mcts_player, human_player
 
-BOARD_SIZE = 5
-MCTS_ITERATIONS = 1000 # Iterations used for self-play and evaluation
+BOARD_SIZE = 6
+MCTS_ITERATIONS = BOARD_SIZE ** 4 # Iterations used for self-play and evaluation
 N_EVAL_GAMES = 40 # Number of games played for each evaluation
 
 N_SELF_PLAY_ITERATIONS = 100
@@ -20,33 +20,38 @@ def collect_training_examples(n_games=100, board_size=5, mcts_iterations=1000, v
     results = []
     for i in range(n_games):
         search_tree = PySearch()
-        states, values = search_tree.self_play(
+        states, values, policy = search_tree.self_play(
             board_size,
             mcts_iterations,
             value_fn,
         )
-        results.append((states, values))
-    states = torch.tensor(np.concatenate([s for s, v in results]))
-    values = torch.tensor(np.concatenate([v for s, v in results]))
+        results.append((states, values, policy))
+    states = torch.tensor(np.concatenate([s for s, v, p in results]))
+    values = torch.tensor(np.concatenate([v for s, v, p in results]))
+    policy = torch.tensor(np.concatenate([p for s, v, p in results]))
     # TODO: shuffle, extract a validation set
-    return augment_examples(states, values)
+    return augment_examples(states, values, policy)
 
-def augment_examples(states, values):
+def augment_examples(states, values, policy):
+    n = states.shape[2]
     augmented = []
     for flip_player in [False, True]:
         for flip_pieces in [False, True]:
-            s, v = states, values
+            s, v, p = states, values, policy
             if flip_player:
                 s, v = torch.flip(torch.transpose(s, 2, 3), [1]), -v
+                p = torch.transpose(p.reshape((-1, n, n)), 1, 2).reshape((-1, n ** 2))
             if flip_pieces:
                 s = torch.flip(s, [2, 3])
-            augmented.append((s, v))
-    states = torch.cat([s for s, v in augmented])
-    values = torch.cat([v for s, v in augmented])
-    return states, values
+                p = torch.flip(p, [1])
+            augmented.append((s, v, p))
+    states = torch.cat([s for s, v, p in augmented])
+    values = torch.cat([v for s, v, p in augmented])
+    policy = torch.cat([p for s, v, p in augmented])
+    return states, values, policy
 
-def train(net, states, values):
-    loss_fn = nn.MSELoss()
+def train(net, states, values, policy):
+    value_loss_fn = nn.MSELoss()
     opt = optim.Adam(net.parameters())
     
     losses = []
@@ -56,22 +61,21 @@ def train(net, states, values):
     for i in range(math.floor(epochs * states.shape[0] / bs)):
         samp = np.random.randint(0, states.shape[0], size=(bs,))
         X = states[samp]
-        Y = values[samp].reshape((-1, 1))
+        target_values = values[samp].reshape((-1, 1))
+        target_policy = policy[samp]
 
         opt.zero_grad()   # zero the gradient buffers
-        output = net(X)
+        output_values, output_policy = net(X)
 
-        # TODO: evaluation
-        # cat = torch.argmax(output, dim=1)
-        # accs.append((cat == Y).float().mean())
-
-        loss = loss_fn(output, Y)
+        value_loss = value_loss_fn(output_values, target_values)
+        policy_loss = -torch.sum(target_policy * torch.log(output_policy)) / bs
+        loss = value_loss + policy_loss
         loss.backward()
         opt.step()    # Does the update
 
-        losses.append(loss.item())
+        losses.append((value_loss.item(), policy_loss.item()))
     
-    print(sum(losses) / len(losses))
+    print('Loss V: {}, Loss P: {}'.format(*[sum(l) / len(l) for l in zip(*losses)]))
 
 # Pits the network against MCTS with random rollouts for (2 * n_games)
 def evaluate(net, n_games):
@@ -96,17 +100,17 @@ for i in range(N_SELF_PLAY_ITERATIONS):
     print('Starting self play iteration {}/{}'.format(i+1, N_SELF_PLAY_ITERATIONS))
 
     value_fn = None if i == 0 else net # Use random rollouts for the first iteration
-    states, values = collect_training_examples(
+    states, values, policy = collect_training_examples(
         board_size=BOARD_SIZE,
         n_games=N_GAMES,
         mcts_iterations=MCTS_ITERATIONS,
-        value_fn=value_fn,
+        value_fn=wrap_for_rust(value_fn),
     )
 
     print('Collected {} samples'.format(states.shape[0]))
 
     print('Training...')
-    train(net, states, values)
+    train(net, states, values, policy)
 
     print('Evaluating...')
     print('Win rate: ', evaluate(net, N_EVAL_GAMES))
