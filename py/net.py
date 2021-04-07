@@ -3,10 +3,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Net(nn.Module):
-    def __init__(self, n):
+    def __init__(self, config):
         super(Net, self).__init__()
 
-        conv_channels = [2, 16, 16]
+        n = config['board_size']
+
+        conv_channels = [2, *config['net_conv_channels']]
 
         self.convs = nn.ModuleList([
             nn.Conv2d(in_channels=conv_channels[i], out_channels=conv_channels[i+1], kernel_size=3, padding=1)
@@ -59,6 +61,7 @@ def wrap_for_rust(net):
     if net is None:
         return None
     def model(state):
-        value, policy = net(state)
+        with torch.no_grad():
+            value, policy = net(state.copy())
         return value.item(), policy.squeeze().tolist()
     return model
