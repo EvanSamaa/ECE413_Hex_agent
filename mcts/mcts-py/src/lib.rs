@@ -80,7 +80,7 @@ impl PySearch {
         action
     }
 
-    fn self_play<'py>(&mut self, py: Python<'py>, size: usize, iterations: usize, value_fn: Option<PyObject>)
+    fn self_play<'py>(&mut self, py: Python<'py>, size: usize, iterations: usize, temperature: f32, value_fn: Option<PyObject>)
         -> (&'py PyArrayDyn<f32>, &'py PyArrayDyn<f32>, &'py PyArrayDyn<f32>)
     {
         let (states, values, action_probs) = if let Some(value_fn) = value_fn {
@@ -90,15 +90,15 @@ impl PySearch {
                     .extract(py)
                     .expect("Failed extracting float from value function result")
             };
-            self_play(&mut self.tree, size, iterations, model)
+            self_play(&mut self.tree, size, iterations, temperature, model)
         } else {
-            self_play(&mut self.tree, size, iterations, search::rollout)
+            self_play(&mut self.tree, size, iterations, temperature, search::rollout)
         };
         (states.into_pyarray(py), values.into_pyarray(py), action_probs.into_pyarray(py))
     }
 }
 
-fn self_play<M: Fn(hex::Hex) -> (f32, Vec<f32>)>(tree: &mut search::SearchTree<hex::Hex>, size: usize, iterations: usize, model: M)
+fn self_play<M: Fn(hex::Hex) -> (f32, Vec<f32>)>(tree: &mut search::SearchTree<hex::Hex>, size: usize, iterations: usize, temperature: f32, model: M)
     -> (ArrayD<f32>, ArrayD<f32>, ArrayD<f32>)
 {
     let mut state = hex::Hex::new(size);
@@ -113,7 +113,8 @@ fn self_play<M: Fn(hex::Hex) -> (f32, Vec<f32>)>(tree: &mut search::SearchTree<h
 
         // Sample an action according to the action probabilities
         let action_prob = tree.action_prob(&state);
-        let dist = WeightedIndex::new(&action_prob).unwrap();
+        let action_prob_perturbed = action_prob.iter().map(|p| p.powf(1. / temperature));
+        let dist = WeightedIndex::new(action_prob_perturbed).unwrap();
         let action = dist.sample(&mut thread_rng()) as u32;
 
         states.push(state.to_array());

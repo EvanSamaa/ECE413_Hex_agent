@@ -23,7 +23,7 @@ def load_net_train(path):
 
 def run_self_play(net_path):
     net = load_net_eval(net_path) if net_path else None
-    return self_play(config['board_size'], config['mcts_iterations'], net)
+    return self_play(config['board_size'], config['mcts_iterations'], config['temperature'], net)
 
 def run_train(model_path, model_out_path, training_examples):
     net = load_net_train(model_path)

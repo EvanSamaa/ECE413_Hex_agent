@@ -5,11 +5,12 @@ from mcts_py import PySearch
 
 # Gets training examples from a single game of self play
 # If net is None, the value estimate is random rollouts
-def self_play(board_size, mcts_iterations, net=None):
+def self_play(board_size, mcts_iterations, temperature, net=None):
     search_tree = PySearch()
     states, values, policy = search_tree.self_play(
         board_size,
         mcts_iterations,
+        temperature,
         wrap_for_rust(net),
     )
     return augment_examples(states, values, policy)

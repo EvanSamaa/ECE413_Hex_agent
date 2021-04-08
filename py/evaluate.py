@@ -43,6 +43,19 @@ def create_mcts_player(net, mcts_iterations=1000):
         return search.get_action(game, mcts_iterations, net)
     return player
 
+def create_shallow_player(net):
+    net = wrap_for_rust(net)
+    def player(game):
+        valids = game.valid_actions()
+        _, policy = net(game.to_array())
+        for i in range(len(policy)):
+            if i not in valids:
+                policy[i] = 0
+        options = sorted(enumerate(policy), key=lambda e: -e[1])
+        print(options[:4])
+        return options[0][0]
+    return player
+
 if __name__ == '__main__':
     player1 = human_player
     player2 = create_mcts_player(None)
