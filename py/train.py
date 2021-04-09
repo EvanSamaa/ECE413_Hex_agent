@@ -14,15 +14,10 @@ def train(net, examples, bs=32, epochs=20):
     states, values, policy = examples
     all_samps = np.random.choice(epochs * states.shape[0], (epochs * states.shape[0],), replace=False)
     for i in range(math.floor(epochs * states.shape[0] / bs)):
-        # samp = np.random.randint(0, states.shape[0], size=(bs,))
-        # X = states[samp]
-        # target_values = values[samp].reshape((-1, 1))
-        # target_policy = policy[samp]
-        samp = all_samps[i * bs: (i + 1) * bs]
-        X = states[np.mod(samp, epochs)]
-        target_values = values[np.mod(samp, epochs)].reshape((-1, 1))
-        target_policy = policy[np.mod(samp, epochs)]
-
+        samp = np.mod(all_samps[i * bs: (i + 1) * bs], states.shape[0])
+        X = states[samp]
+        target_values = values[samp].reshape((-1, 1))
+        target_policy = policy[samp]
 
         opt.zero_grad()  # zero the gradient buffers
         output_values, output_policy = net(X)
