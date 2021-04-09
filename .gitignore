@@ -130,5 +130,12 @@ dmypy.json
 
 # Rust
 target/
-
+mcts_py.pyd
+evan*/
+../.idea/
+../runs/
+../alpha-zero-general/MCTS.py
 .DS_Store
+test-5x5-conv/
+test-6x6-conv/
+../alpha-zero-general/*
