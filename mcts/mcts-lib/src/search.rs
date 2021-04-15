@@ -110,7 +110,7 @@ impl <G: Eq + Hash + Game + Clone> SearchTree<G> {
         };
 
         let next_state = s.next_state(action);
-        let v = self.search(&next_state, model);
+        let v = 0.99 * self.search(&next_state, model);
 
         if let Some(Node::Inner{ n, stats, .. }) = self.nodes.get_mut(s) {
             let stats = stats.entry(action).or_insert(Stats{ v: 0., n: 0. });
