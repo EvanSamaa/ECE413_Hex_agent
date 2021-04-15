@@ -4,16 +4,19 @@ from functools import lru_cache
 import numpy as np
 import torch
 
-from net import Net, Differential_padding_Net
+from net import Net, Differential_padding_Net, ResNet
 from self_play import self_play
 from train import train
 from evaluate import pit, create_mcts_player
 from mcts_py import PyHex
 from config import config
-modelDict = {
-        'conv': Net,
-        'differential_padding': Differential_padding_Net
-    }
+
+model_dict = {
+    'conv': Net,
+    'resnet': ResNet,
+    'differential_padding': Differential_padding_Net,
+}
+
 @lru_cache(maxsize=None)
 def load_net_eval(path):
     return torch.load(path)
@@ -22,7 +25,7 @@ def load_net_train(path):
     if path:
         return torch.load(path)
     else:
-        return modelDict[config["net_type"]](config)
+        return model_dict[config["net_type"]](config)
 
 def run_self_play(net_path):
     net = load_net_eval(net_path) if net_path else None
@@ -48,6 +51,7 @@ def run_evaluate(model_path):
         player1 = create_mcts_player(None, mcts_iterations=config['mcts_iterations'])
         wins += 1 - pit(PyHex(config['board_size']), player1, player2)
     return wins / (n_games_half * 2)
+
 if __name__ == '__main__':
     import pathlib
     import os

@@ -1,7 +1,84 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
- 
+
+class ResBlock(nn.Module):
+    def __init__(self, channels, res=True):
+        super(ResBlock, self).__init__()
+        self.res = res
+        self.convs = nn.ModuleList([
+            nn.Conv2d(in_channels=channels[i], out_channels=channels[i+1], kernel_size=3, padding=1)
+            for i in range(len(channels) - 1)
+        ])
+
+    def forward(self, x):
+        residual = x
+        for i, layer in enumerate(self.convs):
+            x = layer(x)
+            if i < len(self.convs) - 1:
+                x = F.relu(x)
+        if self.res:
+            return x + residual
+        else:
+            return x
+
+class ResNet(nn.Module):
+    def __init__(self, config):
+        super(ResNet, self).__init__()
+
+        n = config['board_size']
+
+        block_channels = config['net_blocks']
+
+        blocks = [
+            nn.Conv2d(in_channels=2, out_channels=block_channels[0][0], kernel_size=3, padding=1)
+        ]
+        for i, channels in enumerate(block_channels):
+            blocks.append(ResBlock(channels, res=i>0))
+        self.blocks = nn.ModuleList(blocks)
+
+        self.value_head = nn.ModuleList([
+            nn.Linear(n * n * block_channels[-1][-1], n * n),
+            nn.Linear(n * n, 1),
+        ])
+
+        self.policy_head = nn.ModuleList([
+            nn.Linear(n * n * block_channels[-1][-1], n * n),
+        ])
+    
+    def forward(self, x):
+        # Allows passing numpy arrays
+        if not isinstance(x, torch.Tensor):
+            x = torch.tensor(x)
+
+        # Allows passing single states or a batch
+        if len(x.shape) == 3:
+            x = x.reshape((1, *x.shape))
+
+        # Convolutions
+        bs = x.shape[0]
+        for layer in self.blocks:
+            x = F.relu(layer(x))
+        x = x.reshape((bs, -1))
+
+        # Value head
+        vx = x
+        for i, layer in enumerate(self.value_head):
+            vx = layer(vx)
+            if i < len(self.value_head) - 1:
+                vx = F.relu(vx)
+        vx = torch.sigmoid(vx) * 2 - 1
+
+        # Policy head
+        px = x
+        for i, layer in enumerate(self.policy_head):
+            px = layer(px)
+            if i < len(self.policy_head) - 1:
+                px = F.relu(px)
+        px = px.softmax(dim=1)
+
+        return vx, px
+
 class Net(nn.Module):
     def __init__(self, config):
         super(Net, self).__init__()
