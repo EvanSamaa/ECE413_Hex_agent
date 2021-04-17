@@ -1,7 +1,7 @@
 import random
 from mcts_py import PyHex, PySearch
 from net import wrap_for_rust
-
+import numpy as np
 # Pits player1 against player2. Each player is a function from board state to a valid action
 # Returns 1 if player1 wins, else 0
 def pit(game, player1, player2, verbose=False):
@@ -23,7 +23,6 @@ def pit(game, player1, player2, verbose=False):
 def random_player(game):
     valids = game.valid_actions()
     return random.choice(valids)
-
 def human_player(game):
     valids = game.valid_actions()
     action = None
@@ -35,14 +34,23 @@ def human_player(game):
         except ValueError:
             action = -1
     return action
-
+class Training_Recorder():
+    def __init__(self, save_dir, data_cols=2, epoch=100000):
+        self.save_dir = save_dir
+        self.data = np.zeros((epoch, data_cols))
+        self.data_cols = data_cols
+    def log(self, epoch, vals):
+        for i in range(self.data_cols):
+            self.data[epoch, i] = vals[i]
+    def save(self):
+        self.data
+        np.save(self.save_dir, self.data)
 def create_mcts_player(net, mcts_iterations=1000):
     search = PySearch()
     net = wrap_for_rust(net)
     def player(game):
         return search.get_action(game, mcts_iterations, net)
     return player
-
 def create_shallow_player(net):
     net = wrap_for_rust(net)
     def player(game):
@@ -55,6 +63,7 @@ def create_shallow_player(net):
         print(options[:4])
         return options[0][0]
     return player
+# def plot_winrate(model_name):
 
 if __name__ == '__main__':
     player1 = human_player

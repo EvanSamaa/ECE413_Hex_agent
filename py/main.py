@@ -7,7 +7,7 @@ import torch
 from net import Net, Differential_padding_Net, ResNet, ResNet_with_Padding
 from self_play import self_play
 from train import train
-from evaluate import pit, create_mcts_player
+from evaluate import pit, create_mcts_player, Training_Recorder
 from mcts_py import PyHex
 from config import config
 
@@ -59,19 +59,16 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Train a hex agent')
-    parser.add_argument('--processes', type=int, default=cpu_count() // 2,
+    parser.add_argument('--processes', type=int, default=1,
         help='number of processes to spin up')
     args = parser.parse_args()
 
     print('Config:')
     for k, v in config.items():
         print('  {}: {}'.format(k, v))
-    print()
-
+    storage = Training_Recorder('../runs/{}/'.format(config['directory'])+"train_result.npy", 3, config["train_epochs"])
     print('Number of processes:', args.processes)
-
     models_path = '../runs/{}/models'.format(config['directory'])
-
     pathlib.Path(models_path).mkdir(parents=True, exist_ok=True)
     last_model = max(int(os.path.splitext(f)[0]) for f in os.listdir(models_path)) if os.listdir(models_path) else 0
 
@@ -115,9 +112,12 @@ if __name__ == '__main__':
                 print('  Training loss V: {:.6f}, P: {:.6f}'.format(
                     sum(value_loss) / len(value_loss),
                     sum(policy_loss) / len(policy_loss),
-                ))
+                    ))
             if evaluate_result:
                 win_rate = evaluate_result.get()
                 print('  Win rate:', win_rate)
+                value_loss, policy_loss = training_result.get()
+                storage.log(i, [win_rate, sum(value_loss) / len(value_loss), sum(policy_loss) / len(policy_loss)])
+                storage.save()
         states, values, policy = [np.concatenate(arrays) for arrays in zip(*self_play_results)]
         training_examples = states, values, policy
