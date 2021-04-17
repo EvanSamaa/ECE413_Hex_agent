@@ -7,7 +7,7 @@ import torch
 from net import Net, Differential_padding_Net, ResNet, ResNet_with_Padding
 from self_play import self_play
 from train import train
-from evaluate import pit, create_mcts_player, Training_Recorder
+from evaluate import pit, create_mcts_player
 from mcts_py import PyHex
 from config import config
 
@@ -17,6 +17,18 @@ model_dict = {
     'resnet_with_padding': ResNet_with_Padding,
     'differential_padding': Differential_padding_Net,
 }
+
+class Training_Recorder:
+    def __init__(self, save_dir, data_cols=2, epoch=100000):
+        self.save_dir = save_dir
+        self.data = np.zeros((epoch, data_cols))
+        self.data_cols = data_cols
+    def log(self, epoch, vals):
+        for i in range(self.data_cols):
+            self.data[epoch, i] = vals[i]
+    def save(self):
+        self.data
+        np.save(self.save_dir, self.data)
 
 @lru_cache(maxsize=None)
 def load_net_eval(path):
@@ -57,18 +69,42 @@ if __name__ == '__main__':
     import pathlib
     import os
     import argparse
+    import json
 
     parser = argparse.ArgumentParser(description='Train a hex agent')
     parser.add_argument('--processes', type=int, default=3,
         help='number of processes to spin up')
+    parser.add_argument('--force', default=False, action='store_true',
+        help='force training even if the config has changed')
     args = parser.parse_args()
+
+    base_path = '../runs/{}'.format(config['directory'])
+    models_path = '{}/models'.format(base_path)
+    config_path = '{}/config.json'.format(base_path)
+    train_result_path = '{}/train_result.npy'.format(base_path)
+
+    # Save the config, and check if a different one exists
+    if pathlib.Path(config_path).is_file():
+        with open(config_path, 'r') as config_file:
+            existing_config = json.load(config_file)
+            if existing_config != config:
+                print('Found an existing config with different values:')
+                for k, v in config.items():
+                    if existing_config[k] != v:
+                        print('  {}: {} -> {}'.format(k, existing_config[k], v))
+                if args.force:
+                    print('Overwriting with new config...')
+                else:
+                    print('To overwrite and train anyway, run again with --force')
+                    exit()
+    with open(config_path, 'w') as config_file:
+        json.dump(config, config_file, indent=4, separators=(',', ': '))
 
     print('Config:')
     for k, v in config.items():
         print('  {}: {}'.format(k, v))
-    storage = Training_Recorder('../runs/{}/'.format(config['directory'])+"train_result.npy", 3, config["train_epochs"])
+    storage = Training_Recorder(train_result_path, 3, config["train_epochs"])
     print('Number of processes:', args.processes)
-    models_path = '../runs/{}/models'.format(config['directory'])
     pathlib.Path(models_path).mkdir(parents=True, exist_ok=True)
     last_model = max(int(os.path.splitext(f)[0]) for f in os.listdir(models_path)) if os.listdir(models_path) else 0
 
@@ -114,8 +150,11 @@ if __name__ == '__main__':
             if evaluate_result:
                 win_rate = evaluate_result.get()
                 print('  Win rate:', win_rate)
-                value_loss, policy_loss = training_result.get()
+
+            # Log
+            if training_result and evaluate_result:
                 storage.log(i, [win_rate, sum(value_loss) / len(value_loss), sum(policy_loss) / len(policy_loss)])
                 storage.save()
+
         states, values, policy = [np.concatenate(arrays) for arrays in zip(*self_play_results)]
         training_examples = states, values, policy
