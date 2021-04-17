@@ -21,7 +21,6 @@ class ResBlock(nn.Module):
             return x + residual
         else:
             return x
-
 class ResNet(nn.Module):
     def __init__(self, config):
         super(ResNet, self).__init__()
@@ -78,8 +77,6 @@ class ResNet(nn.Module):
         px = px.softmax(dim=1)
 
         return vx, px
-
-
 class ResNet_with_Padding(nn.Module):
     def __init__(self, config):
         super(ResNet_with_Padding, self).__init__()
@@ -193,7 +190,6 @@ class Net(nn.Module):
         px = px.softmax(dim=1)
 
         return vx, px
-
 class Differential_padding_Net(nn.Module):
     def __init__(self, config):
         super(Differential_padding_Net, self).__init__()
@@ -259,6 +255,12 @@ class Differential_padding_Net(nn.Module):
         px = px.softmax(dim=1)
 
         return vx, px
+
+def transfer(source_model_config, source_model_class, target_model_class, config):
+    model = source_model_class(source_model_config)
+    model.load_state_dict(torch.load(source_model_config['directory']))
+
+
 def wrap_for_rust(net):
     if net is None:
         return None
@@ -267,3 +269,5 @@ def wrap_for_rust(net):
             value, policy = net(state.copy())
         return value.item(), policy.squeeze().tolist()
     return model
+if __name__ == "__main__":
+    # here are the test codes

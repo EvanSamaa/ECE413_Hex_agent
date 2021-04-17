@@ -59,7 +59,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Train a hex agent')
-    parser.add_argument('--processes', type=int, default=1,
+    parser.add_argument('--processes', type=int, default=3,
         help='number of processes to spin up')
     args = parser.parse_args()
 
@@ -79,9 +79,7 @@ if __name__ == '__main__':
 
     for i in range(last_model, config['self_play_iterations']):
         print('Self play iteration {}/{}'.format(i + 1, config['self_play_iterations']))
-
         model_path = '{}/{}.pt'.format(models_path, i - 1) if i - 1 > 0 else None
-
         self_play_results = []
         with Pool(args.processes) as pool:
             # TRAIN

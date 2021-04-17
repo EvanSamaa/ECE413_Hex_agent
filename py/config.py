@@ -25,3 +25,16 @@ config = {
     'train_batch_size': 64,
     'eval_games': 25,
 }
+Transfer_source_config = {
+    'directory': '../runs/6x6-res-4x2/models/80.pt',
+    'board_size': 9,
+    'net_type': 'resnet_with_padding',
+    'net_blocks': [[16, 16], [16, 16], [16, 16], [16, 16]],
+    'self_play_iterations': 20,
+    'games_per_iteration': 20,
+    'mcts_iterations': 750,
+    'temperature': 1.25,
+    'train_epochs': 50,
+    'train_batch_size': 64,
+    'eval_games': 25,
+}
