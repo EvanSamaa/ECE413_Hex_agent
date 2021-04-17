@@ -34,17 +34,7 @@ def human_player(game):
         except ValueError:
             action = -1
     return action
-class Training_Recorder():
-    def __init__(self, save_dir, data_cols=2, epoch=100000):
-        self.save_dir = save_dir
-        self.data = np.zeros((epoch, data_cols))
-        self.data_cols = data_cols
-    def log(self, epoch, vals):
-        for i in range(self.data_cols):
-            self.data[epoch, i] = vals[i]
-    def save(self):
-        self.data
-        np.save(self.save_dir, self.data)
+
 def create_mcts_player(net, mcts_iterations=1000):
     search = PySearch()
     net = wrap_for_rust(net)
@@ -63,7 +53,6 @@ def create_shallow_player(net):
         print(options[:4])
         return options[0][0]
     return player
-# def plot_winrate(model_name):
 
 if __name__ == '__main__':
     player1 = human_player
