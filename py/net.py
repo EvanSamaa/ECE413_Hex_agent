@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import numpy as np
+# from config import config, transfer_source_config
 class ResBlock(nn.Module):
     def __init__(self, channels, res=True):
         super(ResBlock, self).__init__()
@@ -256,9 +257,16 @@ class Differential_padding_Net(nn.Module):
 
         return vx, px
 
-def transfer(source_model_config, source_model_class, target_model_class, config):
-    model = source_model_class(source_model_config)
-    model.load_state_dict(torch.load(source_model_config['directory']))
+def transfer(source_model_config, config, target_model_class, conv_only=True):
+    model_source = torch.load(source_model_config["directory"])
+    model_target = target_model_class(config)
+    # model = source_model_class(source_model_config)
+    # model.load_state_dict(torch.load(source_model_config['directory']))
+    if conv_only:
+        for (nameA, paramA), (nameB, paramB) in zip(model_source.named_parameters(), model_target.named_parameters()):
+            if (paramA.shape == paramB.shape):
+                paramB.data = paramA.data
+    return model_target
 
 
 def wrap_for_rust(net):
@@ -269,5 +277,6 @@ def wrap_for_rust(net):
             value, policy = net(state.copy())
         return value.item(), policy.squeeze().tolist()
     return model
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # here are the test codes
+    # transfer(transfer_source_config, config, Differential_padding_Net)

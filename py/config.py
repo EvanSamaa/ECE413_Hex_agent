@@ -13,10 +13,13 @@
 # }
 
 config = {
-    'directory': '9x9-res-4x2',
-    'board_size': 9,
+    'directory': '8x8-res-4x2',
+    'board_size': 8,
+    'transfer':True,    # set this true if you wanna do transfer learning
+                        # Make sure that the conv layers matches the one in transfer_source_config
     'net_type': 'resnet_with_padding',
     'net_blocks': [[16, 16], [16, 16], [16, 16], [16, 16]],
+    'net_conv_channels': [16, 16, 16, 16],
     'self_play_iterations': 20,
     'games_per_iteration': 20,
     'mcts_iterations': 750,
@@ -25,11 +28,12 @@ config = {
     'train_batch_size': 64,
     'eval_games': 25,
 }
-Transfer_source_config = {
+transfer_source_config = {
     'directory': '../runs/6x6-res-4x2/models/80.pt',
-    'board_size': 9,
+    'board_size': 6,
     'net_type': 'resnet_with_padding',
     'net_blocks': [[16, 16], [16, 16], [16, 16], [16, 16]],
+    'net_conv_channels': [16, 16, 16, 16],
     'self_play_iterations': 20,
     'games_per_iteration': 20,
     'mcts_iterations': 750,

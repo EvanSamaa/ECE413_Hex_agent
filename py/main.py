@@ -4,12 +4,12 @@ from functools import lru_cache
 import numpy as np
 import torch
 
-from net import Net, Differential_padding_Net, ResNet, ResNet_with_Padding
+from net import Net, Differential_padding_Net, ResNet, ResNet_with_Padding, transfer
 from self_play import self_play
 from train import train
 from evaluate import pit, create_mcts_player
 from mcts_py import PyHex
-from config import config
+from config import config, transfer_source_config
 
 model_dict = {
     'conv': Net,
@@ -73,15 +73,17 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Train a hex agent')
     parser.add_argument('--processes', type=int, default=3,
-        help='number of processes to spin up')
+                        help='number of processes to spin up')
     parser.add_argument('--force', default=False, action='store_true',
-        help='force training even if the config has changed')
+                        help='force training even if the config has changed')
     args = parser.parse_args()
 
     base_path = '../runs/{}'.format(config['directory'])
     models_path = '{}/models'.format(base_path)
     config_path = '{}/config.json'.format(base_path)
     train_result_path = '{}/train_result.npy'.format(base_path)
+
+    pathlib.Path(models_path).mkdir(parents=True, exist_ok=True)
 
     # Save the config, and check if a different one exists
     if pathlib.Path(config_path).is_file():
@@ -105,7 +107,13 @@ if __name__ == '__main__':
         print('  {}: {}'.format(k, v))
     storage = Training_Recorder(train_result_path, 3, config["train_epochs"])
     print('Number of processes:', args.processes)
-    pathlib.Path(models_path).mkdir(parents=True, exist_ok=True)
+
+    # make a new save that contains the transfer model's parameter
+    # therefore the last model would read it in!
+    if config["transfer"] == True:
+        model_to_save = transfer(transfer_source_config, config, model_dict[config["net_type"]])
+        torch.save(model_to_save, '{}/{}.pt'.format(models_path, 1))
+
     last_model = max(int(os.path.splitext(f)[0]) for f in os.listdir(models_path)) if os.listdir(models_path) else 0
 
     if last_model > 0:
