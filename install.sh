@@ -2,6 +2,7 @@
 
 echo '** (1/4) Installing rust dependencies...'
 
+apt update
 apt -yq install build-essential
 
 # Install rustup
@@ -12,6 +13,7 @@ then
 fi
 
 # Set nightly
+rustup set profile minimal
 rustup default nightly
 
 echo '** (2/4) Building rust project...'
@@ -33,3 +35,4 @@ rm -f mcts_py.so
 ln -s ../mcts/target/release/libmcts_py.so mcts_py.so
 
 cd ..
+
