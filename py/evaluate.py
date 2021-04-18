@@ -53,8 +53,13 @@ def create_shallow_player(net):
         print(options[:4])
         return options[0][0]
     return player
-
 if __name__ == '__main__':
+    from matplotlib import pyplot as plt
+    data = np.load("../runs/8x8-res-4x2-more-training-transfer/train_result.npy")
+    plt.plot(data)
+    plt.show()
+    A[2]
     player1 = human_player
     player2 = create_mcts_player(None)
     pit(PyHex(5), player1, player2, verbose=True)
+

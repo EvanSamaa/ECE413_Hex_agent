@@ -13,15 +13,15 @@
 # }
 
 config = {
-    'directory': '8x8-res-4x2',
+    'directory': '8x8-res-4x2-no-tarnsfer',
     'board_size': 8,
-    'transfer':True,    # set this true if you wanna do transfer learning
+    'transfer':False,    # set this true if you wanna do transfer learning
                         # Make sure that the conv layers matches the one in transfer_source_config
     'net_type': 'resnet_with_padding',
     'net_blocks': [[16, 16], [16, 16], [16, 16], [16, 16]],
     'net_conv_channels': [16, 16, 16, 16],
-    'self_play_iterations': 20,
-    'games_per_iteration': 20,
+    'self_play_iterations': 100,
+    'games_per_iteration': 100,
     'mcts_iterations': 750,
     'temperature': 1.25,
     'train_epochs': 50,
