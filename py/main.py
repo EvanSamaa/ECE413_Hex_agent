@@ -19,7 +19,7 @@ model_dict = {
 }
 
 class Training_Recorder:
-    def __init__(self, save_dir, data_cols=2, epoch=100000):
+    def __init__(self, save_dir, data_cols=3, epoch=100000):
         self.save_dir = save_dir
         self.data = np.zeros((epoch, data_cols))
         self.data_cols = data_cols
