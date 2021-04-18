@@ -97,6 +97,7 @@ if __name__ == '__main__':
                 else:
                     print('To overwrite and train anyway, run again with --force')
                     exit()
+    pathlib.Path(models_path).mkdir(parents=True, exist_ok=True)
     with open(config_path, 'w') as config_file:
         json.dump(config, config_file, indent=4, separators=(',', ': '))
 
@@ -105,7 +106,6 @@ if __name__ == '__main__':
         print('  {}: {}'.format(k, v))
     storage = Training_Recorder(train_result_path, 3, config["train_epochs"])
     print('Number of processes:', args.processes)
-    pathlib.Path(models_path).mkdir(parents=True, exist_ok=True)
     last_model = max(int(os.path.splitext(f)[0]) for f in os.listdir(models_path)) if os.listdir(models_path) else 0
 
     if last_model > 0:
