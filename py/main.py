@@ -123,7 +123,7 @@ if __name__ == '__main__':
         print('  {}: {}'.format(k, v))
     print('Number of processes:', args.processes)
 
-    storage = Training_Recorder(train_result_path, 3, config["train_epochs"])
+    storage = Training_Recorder(train_result_path, 3, config['self_play_iterations'])
 
     last_model = last_model_number(models_path)
 
