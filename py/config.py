@@ -7,6 +7,7 @@ config = {
     'self_play_iterations': 50,
     'games_per_iteration': 50,
     'mcts_iterations': 2000,
+
     'temperature': 1.25, # During self play, action probabilities are raised to the (1 / temperature) before sampling
     'train_epochs': 20,
     'train_batch_size': 64,

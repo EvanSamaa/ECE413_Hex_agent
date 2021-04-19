@@ -132,10 +132,11 @@ dmypy.json
 target/
 mcts_py.pyd
 evan*/
-../.idea/
-../runs/
-../alpha-zero-general/MCTS.py
+.idea/
 .DS_Store
 test-5x5-conv/
 test-6x6-conv/
-../alpha-zero-general/*
+
+# Only add runs with final in the name
+runs/*
+!runs/*final*
