@@ -1,0 +1,29 @@
+{
+    "directory": "7x7_transfer_final",
+    "board_size": 7,
+    "transfer_from": "5x5_final",
+    "net_type": "resnet_with_padding",
+    "net_blocks": [
+        [
+            16,
+            16,
+            16,
+            16
+        ],
+        [
+            16,
+            16
+        ],
+        [
+            16,
+            16
+        ]
+    ],
+    "self_play_iterations": 50,
+    "games_per_iteration": 50,
+    "mcts_iterations": 1960,
+    "temperature": 1.25,
+    "train_epochs": 20,
+    "train_batch_size": 64,
+    "eval_games": 16
+}

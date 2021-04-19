@@ -1,4 +1,5 @@
 from multiprocessing import Pool, cpu_count
+import os
 from tqdm import tqdm
 from functools import lru_cache
 import numpy as np
@@ -68,6 +69,12 @@ def run_evaluate(model_path):
 def last_model_number(models_path):
     return max(int(os.path.splitext(f)[0]) for f in os.listdir(models_path)) if os.path.isdir(models_path) and os.listdir(models_path) else 0
 
+def last_model_path():
+    base_path = '../runs/{}'.format(config['directory'])
+    models_path = '{}/models'.format(base_path)
+    model_number = last_model_number(models_path)
+    return '{}/{}.pt'.format(models_path, model_number)
+
 def is_transfer_compatible(config, transfer_config):
     net_params = { k: v for k, v in config.items() if k.startswith('net_') }
     net_params_transfer = { k: v for k, v in transfer_config.items() if k.startswith('net_') }
@@ -75,7 +82,6 @@ def is_transfer_compatible(config, transfer_config):
 
 if __name__ == '__main__':
     import pathlib
-    import os
     import argparse
     import json
 
@@ -148,7 +154,8 @@ if __name__ == '__main__':
         transfer_model_path = '{}/{}.pt'.format(transfer_models_path, last_transfer_model)
         model_to_save = transfer(transfer_model_path, config, model_dict[config['net_type']])
         torch.save(model_to_save, '{}/{}.pt'.format(models_path, 1))
-        last_model = 1
+        torch.save(model_to_save, '{}/{}.pt'.format(models_path, 2))
+        last_model = 2
         print('Transfer model saved!')
 
     training_examples = None
@@ -162,7 +169,7 @@ if __name__ == '__main__':
             if training_examples is None:
                 print('  No training examples yet, skipping training')
             else:
-                print('  Training in parallel...')
+                print('  Training from {} examples in parallel...'.format(training_examples[0].shape[0]))
                 model_out_path = '{}/{}.pt'.format(models_path, i + 1)
                 training_result = pool.apply_async(run_train, (model_path, model_out_path, training_examples))
 

@@ -44,6 +44,10 @@ impl PyHex {
     fn to_array<'py>(&self, py: Python<'py>) -> &'py PyArrayDyn<f32> {
         self.game.to_array().into_dyn().into_pyarray(py)
     }
+
+    fn copy(&self) -> Self {
+        self.clone()
+    }
 }
 
 #[pyclass]
