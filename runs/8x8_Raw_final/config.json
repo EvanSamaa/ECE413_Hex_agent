@@ -1,0 +1,29 @@
+{
+    "directory": "8x8_Raw_final",
+    "board_size": 8,
+    "transfer_from": null,
+    "net_type": "resnet_with_padding",
+    "net_blocks": [
+        [
+            16,
+            16,
+            16,
+            16
+        ],
+        [
+            16,
+            16
+        ],
+        [
+            16,
+            16
+        ]
+    ],
+    "self_play_iterations": 50,
+    "games_per_iteration": 50,
+    "mcts_iterations": 2560,
+    "temperature": 1.25,
+    "train_epochs": 20,
+    "train_batch_size": 64,
+    "eval_games": 16
+}
