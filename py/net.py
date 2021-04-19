@@ -257,8 +257,8 @@ class Differential_padding_Net(nn.Module):
 
         return vx, px
 
-def transfer(source_model_config, config, target_model_class, conv_only=True):
-    model_source = torch.load(source_model_config["directory"])
+def transfer(source_path, config, target_model_class, conv_only=True):
+    model_source = torch.load(source_path)
     model_target = target_model_class(config)
     # model = source_model_class(source_model_config)
     # model.load_state_dict(torch.load(source_model_config['directory']))
