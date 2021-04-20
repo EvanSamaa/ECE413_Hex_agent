@@ -1,18 +1,12 @@
 # Learning hex from self play
 
-## Dependencies
+## Dependencies and building the extension
 
 The project includes a pytorch model and a python extension written in Rust for the game evaluation and tree search implementation.
 
 So you'll need python and the dependencies in `py/requirements.txt`. As well as rust (unfortunately, you need the nightly channel).
 
-See `install.sh` for how these would be installed on an Ubuntu machine.
-
-## Building
-
-In `mcts`, run `cargo build --release`.
-
-On linux, you'll need to copy the library for python to see it: `cd py && ln ../mcts/target/release/libmcts_py.so mcts_py.so`.
+See `install.sh` for how these would be installed on an Ubuntu machine. (In `mcts`, run `cargo build --release`. On linux, you'll need to copy the library for python to see it: `cd py && ln ../mcts/target/release/libmcts_py.so mcts_py.so`.)
 
 ## Training
 
