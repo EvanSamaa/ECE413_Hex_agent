@@ -1,5 +1,7 @@
 # Learning hex from self play
 
+![Training progress for 5x5 agent](./plots/5x5.png)
+
 ## Dependencies and building the extension
 
 The project includes a pytorch model and a python extension written in Rust for the game evaluation and tree search implementation.
