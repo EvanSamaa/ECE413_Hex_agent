@@ -1,6 +1,6 @@
 # Learning hex from self play
 
-![Training progress for 5x5 agent](./plots/5x5.png)
+![Training progress for 7x7 agent](./plots/7x7.png)
 
 ## Dependencies and building the extension
 
