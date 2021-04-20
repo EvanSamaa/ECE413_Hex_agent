@@ -28,3 +28,4 @@ Self play, training, and evaluation run in parallel and on multiple processes. T
 
 `plot.py` generates the plots used in the paper, based on the results from these evaluations.
 
+You can also play against the trained model with a barest-bones terminal interface, with `human_play.py`.
