@@ -69,12 +69,6 @@ def run_evaluate(model_path):
 def last_model_number(models_path):
     return max(int(os.path.splitext(f)[0]) for f in os.listdir(models_path)) if os.path.isdir(models_path) and os.listdir(models_path) else 0
 
-def last_model_path():
-    base_path = '../runs/{}'.format(config['directory'])
-    models_path = '{}/models'.format(base_path)
-    model_number = last_model_number(models_path)
-    return '{}/{}.pt'.format(models_path, model_number)
-
 def is_transfer_compatible(config, transfer_config):
     net_params = { k: v for k, v in config.items() if k.startswith('net_') }
     net_params_transfer = { k: v for k, v in transfer_config.items() if k.startswith('net_') }
