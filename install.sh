@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo '** (1/4) Installing rust dependencies...'
+echo '** (1/3) Installing rust dependencies...'
 
 apt update
 apt -yq install build-essential
@@ -16,13 +16,13 @@ fi
 rustup set profile minimal
 rustup default nightly
 
-echo '** (2/4) Building rust project...'
+echo '** (2/3) Building rust project...'
 
 cd mcts
 cargo build --release
 cd ..
 
-echo '** (3/4) Install python dependencies...'
+echo '** (3/3) Install python dependencies...'
 
 apt -yq install python3 python3-pip
 
